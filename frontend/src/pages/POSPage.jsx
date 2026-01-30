@@ -1,21 +1,22 @@
 import { useState, useEffect } from 'react';
-import axios from '../api/axios';
+import axios from '../api/axios'; // Loyalty වැඩ වලට විතරක් ඕන වෙනවා
 import { LogOut, Search, Trash2, Plus, Minus, Coffee, UserCheck, UserPlus, X, User, DollarSign, AlertCircle, CheckCircle, HelpCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { usePOSData } from '../context/POSContext'; // <--- Context එක Import කළා
 
 const POSPage = () => {
     const navigate = useNavigate();
     
-    // --- DATA STATES ---
-    const [categories, setCategories] = useState([]);
-    const [products, setProducts] = useState([]);
+    // --- GLOBAL DATA (Context එකෙන් ගන්නේ) ⚡ ---
+    // දැන් අපි ආයේ ආයේ Fetch කරන්නේ නෑ. කෙලින්ම Store එකෙන් ගන්නවා.
+    const { products, categories, todaySales, loading } = usePOSData();
+
+    // --- LOCAL STATES (මේ පිටුවට විතරක් අදාළ දේවල්) ---
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [cart, setCart] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [loading, setLoading] = useState(true);
     const [staffName, setStaffName] = useState('Staff');
-    const [todaySales, setTodaySales] = useState(0);
 
     // --- LOYALTY STATES ---
     const [loyaltyPhone, setLoyaltyPhone] = useState('');
@@ -26,48 +27,35 @@ const POSPage = () => {
     const [regEmail, setRegEmail] = useState('');
     const [regPhone, setRegPhone] = useState('');
 
-    // --- POPUP STATES (NEW) ---
-    const [notification, setNotification] = useState({ show: false, message: '', type: 'info' }); // type: success, error, info
+    // --- POPUP STATES ---
+    const [notification, setNotification] = useState({ show: false, message: '', type: 'info' });
     const [confirmation, setConfirmation] = useState({ show: false, message: '', onConfirm: null });
 
-    // --- LOAD DATA ---
+    // --- INITIAL SETUP ---
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-                if (userInfo) setStaffName(userInfo.name || userInfo.username);
-
-                const catRes = await axios.get('/inventory/categories');
-                const prodRes = await axios.get('/inventory/products');
-                const analyticsRes = await axios.get('/orders/analytics');
-                
-                const today = new Date().toISOString().split('T')[0];
-                const todayData = analyticsRes.data.dailySales.find(d => d._id === today);
-                setTodaySales(todayData ? todayData.total : 0);
-
-                setCategories(catRes.data);
-                setProducts(prodRes.data);
-                setFilteredProducts(prodRes.data);
-                setLoading(false);
-            } catch (error) {
-                console.error("Error loading data:", error);
-                setLoading(false);
-            }
-        };
-        fetchData();
+        // Staff නම විතරක් LocalStorage එකෙන් ගමු
+        const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+        if (userInfo) setStaffName(userInfo.name || userInfo.username);
     }, []);
 
+    // --- FILTERING LOGIC ---
+    // Products වෙනස් වුනාම හෝ Search කළාම මේක වැඩ කරනවා
     useEffect(() => {
-        let result = products;
-        if (selectedCategory !== 'All') result = result.filter(p => p.category?._id === selectedCategory || p.category === selectedCategory);
-        if (searchQuery) result = result.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
-        setFilteredProducts(result);
-    }, [selectedCategory, searchQuery, products]);
+        if (loading) return; // Data එනකම් ඉන්න
 
-    // --- HELPER FUNCTIONS FOR POPUPS ---
+        let result = products; // Global Products ලිස්ට් එක පාවිච්චි කරනවා
+        if (selectedCategory !== 'All') {
+            result = result.filter(p => p.category?._id === selectedCategory || p.category === selectedCategory);
+        }
+        if (searchQuery) {
+            result = result.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+        }
+        setFilteredProducts(result);
+    }, [selectedCategory, searchQuery, products, loading]);
+
+    // --- HELPER FUNCTIONS ---
     const showToast = (message, type = 'error') => {
         setNotification({ show: true, message, type });
-        // තත්පර 3කින් ඉබේ නැතිවෙලා යන්න (Error එකක් නෙවෙයි නම්)
         if(type === 'success') {
             setTimeout(() => setNotification({ show: false, message: '', type: 'info' }), 2000);
         }
@@ -112,7 +100,6 @@ const POSPage = () => {
                 showToast(`Welcome back, ${res.data.member.name}!`, "success");
             } else {
                 setLoyaltyMember(null);
-                // Confirm Dialog එක පාවිච්චි කිරීම
                 triggerConfirm("Member not found! Register new customer?", () => {
                     setRegPhone(loyaltyPhone);
                     setViewMode('register');
@@ -169,12 +156,13 @@ const POSPage = () => {
         });
     };
 
-    if (loading) return <div className="flex h-screen items-center justify-center font-bold text-gray-500">Loading POS...</div>;
+    // Loading එක දැන් එන්නේ පළවෙනි පාර විතරයි. ඊට පස්සේ Cache එකෙන් එන නිසා Instant Load වෙනවා.
+    if (loading) return <div className="flex h-screen items-center justify-center font-bold text-gray-500 text-xl">🚀 Loading POS System...</div>;
 
     return (
         <div className="flex h-screen bg-gray-200 p-4 font-sans gap-4 overflow-hidden relative">
             
-            {/* ================= CUSTOM NOTIFICATION POPUP (Toast) ================= */}
+            {/* ================= TOAST & CONFIRMATION (SAME AS BEFORE) ================= */}
             {notification.show && (
                 <div className={`absolute top-6 left-1/2 transform -translate-x-1/2 z-[100] flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl animate-bounce-in border-2 ${
                     notification.type === 'success' ? 'bg-white border-green-500 text-green-700' : 
@@ -183,76 +171,47 @@ const POSPage = () => {
                     {notification.type === 'success' && <CheckCircle size={24} />}
                     {notification.type === 'error' && <AlertCircle size={24} />}
                     {notification.type === 'info' && <AlertCircle size={24} />}
-                    
                     <div>
                         <h4 className="font-bold text-sm">{notification.type === 'error' ? 'Oops!' : notification.type === 'success' ? 'Success' : 'Notice'}</h4>
                         <p className="font-medium text-sm">{notification.message}</p>
                     </div>
-                    
                     <button onClick={() => setNotification({ ...notification, show: false })} className="ml-4 hover:bg-gray-100 p-1 rounded-full"><X size={16} /></button>
                 </div>
             )}
 
-            {/* ================= CUSTOM CONFIRMATION MODAL ================= */}
             {confirmation.show && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-[100] backdrop-blur-sm">
-                    <div className="bg-white p-6 rounded-2xl shadow-2xl w-80 text-center transform scale-100 transition-all">
+                    <div className="bg-white p-6 rounded-2xl shadow-2xl w-80 text-center">
                         <div className="bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                             <HelpCircle size={32} className="text-blue-600" />
                         </div>
                         <h3 className="text-lg font-bold text-gray-800 mb-2">Confirmation</h3>
                         <p className="text-gray-500 text-sm mb-6">{confirmation.message}</p>
-                        
                         <div className="flex gap-3">
-                            <button 
-                                onClick={() => setConfirmation({ ...confirmation, show: false })} 
-                                className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                onClick={confirmation.onConfirm} 
-                                className="flex-1 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 transition shadow-lg"
-                            >
-                                Yes, Proceed
-                            </button>
+                            <button onClick={() => setConfirmation({ ...confirmation, show: false })} className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition">Cancel</button>
+                            <button onClick={confirmation.onConfirm} className="flex-1 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 transition shadow-lg">Yes, Proceed</button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* ================= LOYALTY MODAL ================= */}
+            {/* ================= LOYALTY MODAL (SAME AS BEFORE) ================= */}
             {showLoyaltyModal && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm">
-                    <div className="bg-white p-6 rounded-xl shadow-2xl w-96 transform transition-all">
+                    <div className="bg-white p-6 rounded-xl shadow-2xl w-96">
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-bold text-gray-800">
-                                {viewMode === 'check' ? 'Customer Loyalty' : 'New Member Registration'}
-                            </h2>
+                            <h2 className="text-xl font-bold text-gray-800">{viewMode === 'check' ? 'Customer Loyalty' : 'New Member Registration'}</h2>
                             <button onClick={() => {setShowLoyaltyModal(false); setViewMode('check')}} className="text-gray-400 hover:text-red-500"><X /></button>
                         </div>
-
                         {viewMode === 'check' ? (
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                                    <input 
-                                        type="text" 
-                                        autoFocus
-                                        className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                                        placeholder="07XXXXXXXX"
-                                        value={loyaltyPhone}
-                                        onChange={(e) => setLoyaltyPhone(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && checkLoyalty()}
-                                    />
+                                    <input type="text" autoFocus className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="07XXXXXXXX" value={loyaltyPhone} onChange={(e) => setLoyaltyPhone(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && checkLoyalty()} />
                                 </div>
                                 <div className="flex gap-3 pt-2">
-                                    <button onClick={checkLoyalty} className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold shadow-md active:scale-95 transition flex justify-center items-center gap-2">
-                                        <UserCheck size={20} /> Check
-                                    </button>
-                                    <button onClick={() => {setRegPhone(loyaltyPhone); setViewMode('register')}} className="flex-1 bg-green-500 text-white py-3 rounded-lg font-bold shadow-md active:scale-95 transition flex justify-center items-center gap-2">
-                                        <UserPlus size={20} /> New
-                                    </button>
+                                    <button onClick={checkLoyalty} className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold flex justify-center items-center gap-2"><UserCheck size={20} /> Check</button>
+                                    <button onClick={() => {setRegPhone(loyaltyPhone); setViewMode('register')}} className="flex-1 bg-green-500 text-white py-3 rounded-lg font-bold flex justify-center items-center gap-2"><UserPlus size={20} /> New</button>
                                 </div>
                             </div>
                         ) : (
@@ -277,7 +236,6 @@ const POSPage = () => {
                     
                     <div className="flex items-center gap-4 w-2/3 justify-end">
                         <div className="hidden lg:flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full border border-gray-200 shadow-sm">
-                            
                             <div className="flex flex-col leading-none">
                                 <span className="text-[9px] text-gray-600 font-bold uppercase">Today's Sales</span>
                                 <span className="font-semibold text-[12px] text-gray-800">Rs. {todaySales.toLocaleString()}</span>
@@ -315,7 +273,6 @@ const POSPage = () => {
 
             {/* --- RIGHT SIDE: CART (35%) --- */}
             <div className="w-1/3 bg-white flex flex-col shadow-2xl z-20 h-full rounded-2xl overflow-hidden border border-gray-200">
-                
                 <div className="p-4 border-b bg-white flex justify-between items-center shadow-sm h-20 shrink-0 gap-2">
                     <div className="flex items-center gap-3">
                         <div className="bg-orange-100 p-2 rounded-full text-orange-600 border border-orange-200"><User size={20} /></div>
@@ -326,14 +283,7 @@ const POSPage = () => {
                     </div>
 
                     <div className="flex gap-2">
-                        <button 
-                            onClick={() => setShowLoyaltyModal(true)} 
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold shadow-sm active:scale-95 transition ${
-                                loyaltyMember 
-                                ? 'bg-green-100 text-green-700 border border-green-300' 
-                                : 'bg-blue-600 text-white'
-                            }`}
-                        >
+                        <button onClick={() => setShowLoyaltyModal(true)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold shadow-sm active:scale-95 transition ${loyaltyMember ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-blue-600 text-white'}`}>
                             {loyaltyMember ? (
                                 <>
                                     <UserCheck size={18} />
@@ -361,20 +311,13 @@ const POSPage = () => {
                                 <h4 className="font-bold text-gray-800 text-sm truncate">{item.name}</h4>
                                 <p className="text-xs text-gray-500">RS {item.price}</p>
                             </div>
-                            
                             <div className="flex items-center bg-gray-100 rounded-lg mr-4 border border-gray-200">
                                 <button onClick={() => decreaseQty(item._id)} className="p-2 text-gray-600 active:bg-gray-200 rounded-l-lg"><Minus size={14}/></button>
                                 <span className="px-3 font-bold text-sm min-w-[30px] text-center bg-white h-full flex items-center">{item.qty}</span>
                                 <button onClick={() => increaseQty(item._id)} className="p-2 text-gray-600 active:bg-gray-200 rounded-r-lg"><Plus size={14}/></button>
                             </div>
-                            
-                            <div className="flex-1 text-center font-bold text-gray-700 text-sm">
-                                {(item.price * item.qty).toFixed(0)}
-                            </div>
-
-                            <button onClick={() => removeFromCart(item._id)} className="ml-2 p-2 text-red-500 bg-red-50 rounded-lg active:scale-95 border border-red-100">
-                                <Trash2 size={16} />
-                            </button>
+                            <div className="flex-1 text-center font-bold text-gray-700 text-sm">{(item.price * item.qty).toFixed(0)}</div>
+                            <button onClick={() => removeFromCart(item._id)} className="ml-2 p-2 text-red-500 bg-red-50 rounded-lg active:scale-95 border border-red-100"><Trash2 size={16} /></button>
                         </div>
                     ))}
                     {cart.length === 0 && <div className="h-full flex flex-col items-center justify-center text-gray-400 space-y-3 opacity-60"><Coffee size={64} /><p className="font-bold">Cart is empty</p></div>}
@@ -382,29 +325,16 @@ const POSPage = () => {
 
                 <div className="p-5 bg-white border-t shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                     <div className="space-y-2 mb-4 text-sm font-medium">
-                        <div className="flex justify-between text-gray-600">
-                            <span>Subtotal</span>
-                            <span>{subTotal.toFixed(2)}</span>
-                        </div>
-                        {loyaltyMember && (
-                            <div className="flex justify-between text-green-600 font-bold bg-green-50 p-2 rounded-lg border border-green-100">
-                                <span>Loyalty Discount (10%)</span>
-                                <span>- {discount.toFixed(2)}</span>
-                            </div>
-                        )}
+                        <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>{subTotal.toFixed(2)}</span></div>
+                        {loyaltyMember && <div className="flex justify-between text-green-600 font-bold bg-green-50 p-2 rounded-lg border border-green-100"><span>Loyalty Discount (10%)</span><span>- {discount.toFixed(2)}</span></div>}
                     </div>
-                    
                     <div className="flex justify-between items-center mb-5 text-2xl pt-2 border-t border-gray-100">
                         <span className="font-extrabold text-gray-800">Total</span>
                         <span className="font-extrabold text-orange-600">Rs. {finalTotal.toFixed(2)}</span>
                     </div>
-                    
-                    <button onClick={handlePlaceOrder} disabled={cart.length === 0} className={`w-full py-4 rounded-xl text-white font-extrabold text-lg shadow-lg transition active:scale-95 flex items-center justify-center gap-2 ${cart.length === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}>
-                         CHARGE
-                    </button>
+                    <button onClick={handlePlaceOrder} disabled={cart.length === 0} className={`w-full py-4 rounded-xl text-white font-extrabold text-lg shadow-lg transition active:scale-95 flex items-center justify-center gap-2 ${cart.length === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}>CHARGE</button>
                 </div>
             </div>
-
         </div>
     );
 };

@@ -1,33 +1,45 @@
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import ProtectedRoute from './components/ProtectedRoute';
+import { POSProvider } from './context/POSContext';
 
-// Pages
-import Login from './pages/Login';
-import AdminDashboard from './pages/AdminDashboard';
+// ✅ 1. POS Page එක සාමාන්‍ය විදියට Import කරන්න (Fast Loading සඳහා)
 import POSPage from './pages/POSPage';
 import PaymentPage from './pages/PaymentPage'; 
 
-// Components
-import StaffManagement from './components/StaffManagement';
-import CategoryManagement from './components/CategoryManagement';
-import ProductManagement from './components/ProductManagement';
-import LoyaltyManagement from './components/LoyaltyManagement';
-import SalesManagement from './components/SalesManagement';
-import AnalyticsDashboard from './components/AnalyticsDashboard';
-import ShopSettings from './components/ShopSettings';
-import ProtectedRoute from './components/ProtectedRoute'; // <--- අලුත් එක Import කළා
+// 💤 2. අනිත් බර දේවල් විතරක් Lazy Load කරන්න
+const Login = lazy(() => import('./pages/Login'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+
+// Admin Components (මේවා දිගටම Lazy තිබුනට කමක් නෑ)
+const StaffManagement = lazy(() => import('./components/StaffManagement'));
+const CategoryManagement = lazy(() => import('./components/CategoryManagement'));
+const ProductManagement = lazy(() => import('./components/ProductManagement'));
+const LoyaltyManagement = lazy(() => import('./components/LoyaltyManagement'));
+const SalesManagement = lazy(() => import('./components/SalesManagement'));
+const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard'));
+const ShopSettings = lazy(() => import('./components/ShopSettings'));
 
 function App() {
   return (
+    <POSProvider>
     <BrowserRouter>
-      <Routes>
-        {/* Public Route (ඕනම කෙනෙක්ට යන්න පුළුවන්) */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={<Navigate to="/login" />} />
+      {/* Suspense එක තියෙන්නේ Lazy Load වෙන ඒවට විතරයි */}
+      <Suspense 
+        fallback={
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontSize: '20px', fontWeight: 'bold' }}>
+            🚀 Loading System... Please Wait...
+          </div>
+        }
+      >
+        <Routes>
+          {/* Public Route */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Navigate to="/login" />} />
 
-        {/* --- PROTECTED: ADMIN ONLY --- */}
-        {/* මෙතනින් කියන්නේ 'admin' ලට විතරයි මේ ඇතුලේ තියෙන ඒවාට යන්න පුළුවන් */}
-        <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
-            <Route path="/admin-dashboard" element={<AdminDashboard />}>
+          {/* --- PROTECTED: ADMIN ONLY --- */}
+          <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+             <Route path="/admin-dashboard" element={<AdminDashboard />}>
                 <Route index element={<Navigate to="staff" />} />
                 <Route path="staff" element={<StaffManagement />} />
                 <Route path="categories" element={<CategoryManagement />} />
@@ -36,21 +48,22 @@ function App() {
                 <Route path="sales" element={<SalesManagement />} />
                 <Route path="analytics" element={<AnalyticsDashboard />} />
                 <Route path="settings" element={<ShopSettings />} />
-            </Route>
-        </Route>
+             </Route>
+          </Route>
 
-        {/* --- PROTECTED: STAFF & ADMIN --- */}
-        {/* POS එකට Admin සහ Staff දෙගොල්ලොන්ටම යන්න පුළුවන් වෙන්න ඕන */}
-        <Route element={<ProtectedRoute allowedRoles={['user', 'admin']} />}>
-            <Route path="/pos" element={<POSPage />} />
-            <Route path="/payment" element={<PaymentPage />} />
-        </Route>
+          {/* --- PROTECTED: STAFF & ADMIN --- */}
+          <Route element={<ProtectedRoute allowedRoles={['user', 'admin']} />}>
+             {/* ✅ POS Page එක දැන් Normal නිසා Loading එන්නේ නෑ */}
+             <Route path="/pos" element={<POSPage />} />
+             <Route path="/payment" element={<PaymentPage />} />
+          </Route>
 
-        {/* වැරදි URL එකක් ගැහුවොත් Login එකට යවන්න */}
-        <Route path="*" element={<Navigate to="/login" />} />
+          <Route path="*" element={<Navigate to="/login" />} />
 
-      </Routes>
+        </Routes>
+      </Suspense>
     </BrowserRouter>
+    </POSProvider>
   );
 }
 
