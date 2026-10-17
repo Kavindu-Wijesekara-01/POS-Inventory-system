@@ -1,4 +1,4 @@
-﻿# ============================================================
+# ============================================================
 # Hardened Dockerfile for Auth Service (Node.js 22)
 # ============================================================
 # Security features:
@@ -21,11 +21,10 @@ RUN apk add --no-cache dumb-init
 WORKDIR /app
 
 # Copy dependency manifests first (maximizes layer cache hits)
-COPY package.json package-lock.json ./
+COPY package*.json ./
 
-# npm ci: clean install from lockfile - reproducible builds
-# --only=production: skip devDependencies
-RUN npm ci --only=production --ignore-scripts && \
+# npm install: production dependencies
+RUN npm install --omit=dev --ignore-scripts && \
     npm cache clean --force
 
 # ---- Stage 2: Hardened Runtime ----
