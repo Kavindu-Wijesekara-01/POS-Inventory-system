@@ -44,13 +44,8 @@ const AdminDashboard = () => {
                         <ShoppingBag size={20} /> Products
                     </NavLink>
 
-                    {/* Loyalty Members */}
-                    <NavLink to="/admin-dashboard/loyalty" className={({ isActive }) => isActive ? activeStyle : inactiveStyle}>
-                        <UserCheck size={20} /> Loyalty Members
-                    </NavLink>
-
                     <div className="border-t border-gray-800 my-4 pt-4">
-                        <p className="px-4 text-xs font-bold text-gray-500 uppercase mb-2">Reports & Settings</p>
+                        <p className="px-4 text-xs font-bold text-gray-500 uppercase mb-2">Reports & Overview</p>
                         
                         {/* Sales Reports */}
                         <NavLink to="/admin-dashboard/sales" className={({ isActive }) => isActive ? "flex items-center gap-3 px-4 py-3 rounded-lg bg-green-600 text-white shadow-md font-medium" : inactiveStyle}>
@@ -60,11 +55,6 @@ const AdminDashboard = () => {
                         {/* Advanced Analytics */}
                         <NavLink to="/admin-dashboard/analytics" className={({ isActive }) => isActive ? "flex items-center gap-3 px-4 py-3 rounded-lg bg-purple-600 text-white shadow-md font-medium" : inactiveStyle}>
                             <PieChart size={20} /> Analytics & AI
-                        </NavLink>
-
-                        {/* Shop Settings (New) */}
-                        <NavLink to="/admin-dashboard/settings" className={({ isActive }) => isActive ? activeStyle : inactiveStyle}>
-                            <Settings size={20} /> Shop Settings
                         </NavLink>
                     </div>
                 </nav>

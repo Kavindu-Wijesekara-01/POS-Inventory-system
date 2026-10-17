@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  # ===== API Gateway (Nginx) =====
+  api-gateway:
+    image: nginx:alpine
+    container_name: pos-api-gateway
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      inventory-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+    networks:
+      - pos-network
+    restart: unless-stopped
+    mem_limit: 32m
+    cpus: 0.25
+
+  # ===== 1. Auth Service (Core) =====
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: pos-auth-service
+    environment:
+      - PORT=5001
+      - MONGO_URI=${MONGO_URI_AUTH}
+      - JWT_SECRET=${JWT_SECRET}
+      - NODE_OPTIONS=--max-old-space-size=128
+    expose:
+      - "5001"
+    networks:
+      - pos-network
+    restart: unless-stopped
+    mem_limit: 160m
+    cpus: 0.35
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
+  # ===== 2. Inventory Service (Core) =====
+  inventory-service:
+    build:
+      context: ./services/inventory-service
+      dockerfile: Dockerfile
+    container_name: pos-inventory-service
+    environment:
+      - PORT=5002
+      - MONGO_URI=${MONGO_URI_INVENTORY}
+      - NODE_OPTIONS=--max-old-space-size=128
+    expose:
+      - "5002"
+    networks:
+      - pos-network
+    restart: unless-stopped
+    mem_limit: 160m
+    cpus: 0.35
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
+  # ===== 3. Order Service (Core) =====
+  order-service:
+    build:
+      context: ./services/order-service
+      dockerfile: Dockerfile
+    container_name: pos-order-service
+    environment:
+      - PORT=5003
+      - MONGO_URI=${MONGO_URI_ORDER}
+      - NODE_OPTIONS=--max-old-space-size=128
+    expose:
+      - "5003"
+    networks:
+      - pos-network
+    restart: unless-stopped
+    mem_limit: 160m
+    cpus: 0.35
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5003/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
+  # ===== Frontend (React Production Build with Nginx - Lightweight) =====
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pos-frontend
+    expose:
+      - "80"
+    networks:
+      - pos-network
+    restart: unless-stopped
+    mem_limit: 32m
+    cpus: 0.20
+
+networks:
+  pos-network:
+    driver: bridge
+    name: pos-microservices-network

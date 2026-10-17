@@ -15,10 +15,8 @@ const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const StaffManagement = lazy(() => import('./components/StaffManagement'));
 const CategoryManagement = lazy(() => import('./components/CategoryManagement'));
 const ProductManagement = lazy(() => import('./components/ProductManagement'));
-const LoyaltyManagement = lazy(() => import('./components/LoyaltyManagement'));
 const SalesManagement = lazy(() => import('./components/SalesManagement'));
 const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard'));
-const ShopSettings = lazy(() => import('./components/ShopSettings'));
 
 function App() {
   return (
@@ -44,10 +42,8 @@ function App() {
                 <Route path="staff" element={<StaffManagement />} />
                 <Route path="categories" element={<CategoryManagement />} />
                 <Route path="products" element={<ProductManagement />} />
-                <Route path="loyalty" element={<LoyaltyManagement />} />
                 <Route path="sales" element={<SalesManagement />} />
                 <Route path="analytics" element={<AnalyticsDashboard />} />
-                <Route path="settings" element={<ShopSettings />} />
              </Route>
           </Route>
 

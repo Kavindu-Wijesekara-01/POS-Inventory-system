@@ -1,8 +1,10 @@
 import axios from 'axios';
 
-// Backend එක run වෙන Port එක මෙතනට දෙන්න (අපි කලින් හැදුවේ port 5000)
+// Microservice Architecture: API Gateway (Nginx) එකට point කරනවා
+// Docker Compose එකේදී port 3000 එකෙන් Nginx Gateway එක run වෙනවා
+// Local dev (without Docker) - use http://localhost:3000/api
 const instance = axios.create({
-    baseURL: 'http://localhost:5000/api' 
+    baseURL: 'http://localhost:3000/api' 
 });
 
-export default instance;
+export default instance;

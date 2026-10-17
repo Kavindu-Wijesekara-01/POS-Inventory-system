@@ -1,0 +1,83 @@
+# ============================================================
+# Docker Compose Override - Staging Environment (1GB Optimized)
+# ============================================================
+# Overrides base docker-compose.yml with staging-specific
+# settings: resource limits, logging, pre-pulled images.
+# ============================================================
+version: '3.8'
+
+services:
+  auth-service:
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_PREFIX:-org/pos}-auth-service:${IMAGE_TAG:-latest}
+    deploy:
+      resources:
+        limits:
+          memory: 160M
+          cpus: '0.35'
+        reservations:
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+
+  inventory-service:
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_PREFIX:-org/pos}-inventory-service:${IMAGE_TAG:-latest}
+    deploy:
+      resources:
+        limits:
+          memory: 160M
+          cpus: '0.35'
+        reservations:
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+
+  order-service:
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_PREFIX:-org/pos}-order-service:${IMAGE_TAG:-latest}
+    deploy:
+      resources:
+        limits:
+          memory: 160M
+          cpus: '0.35'
+        reservations:
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+
+  frontend:
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_PREFIX:-org/pos}-frontend:${IMAGE_TAG:-latest}
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+          cpus: '0.2'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+
+  api-gateway:
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

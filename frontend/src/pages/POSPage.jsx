@@ -283,23 +283,8 @@ const POSPage = () => {
                     </div>
 
                     <div className="flex gap-2">
-                        <button onClick={() => setShowLoyaltyModal(true)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold shadow-sm active:scale-95 transition ${loyaltyMember ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-blue-600 text-white'}`}>
-                            {loyaltyMember ? (
-                                <>
-                                    <UserCheck size={18} />
-                                    <span className="max-w-[80px] truncate">{loyaltyMember.name}</span>
-                                    <div onClick={removeLoyalty} className="p-1 bg-white/50 rounded-full ml-1 hover:bg-red-500 hover:text-white transition"><X size={12} /></div>
-                                </>
-                            ) : (
-                                <>
-                                    <UserPlus size={18} />
-                                    <span>Check Loyalty</span>
-                                </>
-                            )}
-                        </button>
-
-                        <button onClick={handleLogout} className="bg-red-50 border border-red-200 text-red-600 p-2 rounded-lg shadow-sm active:scale-95 transition hover:bg-red-100">
-                            <LogOut size={20} />
+                        <button onClick={handleLogout} className="bg-red-50 border border-red-200 text-red-600 p-2 rounded-lg shadow-sm active:scale-95 transition hover:bg-red-100 flex items-center gap-1 font-semibold text-sm">
+                            <LogOut size={18} /> Logout
                         </button>
                     </div>
                 </div>

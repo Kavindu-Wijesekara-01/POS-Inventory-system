@@ -1,0 +1,54 @@
+﻿# ============================================================
+# OWASP ZAP Rules Configuration
+# ============================================================
+# Customize ZAP alert handling for the POS system
+# Format: alertId  IGNORE/WARN/FAIL  Optional comment
+#
+# Severity mapping:
+#   FAIL  -> Causes pipeline failure (high risk)
+#   WARN  -> Reports but does not fail
+#   IGNORE -> Suppressed (false positive or accepted risk)
+#
+# Find alert IDs at: https://www.zaproxy.org/docs/alerts/
+# ============================================================
+
+# ---- FAIL on these (High Risk) ----
+# SQL Injection
+90018	FAIL	SQL Injection - PCI-DSS Req 6.3.1
+# Remote File Include
+7	FAIL	Remote File Include
+# Command Injection
+90020	FAIL	OS Command Injection
+# LDAP Injection
+90017	FAIL	LDAP Injection
+# XSS - Persistent
+40014	FAIL	Persistent XSS - PCI-DSS Req 6.3.1
+40016	FAIL	Persistent XSS - Prime
+40017	FAIL	Persistent XSS - Spider
+# XSS - Reflected
+40012	FAIL	Reflected XSS - PCI-DSS Req 6.3.1
+40014	FAIL	Reflected XSS - All POST parameters
+# Path Traversal
+6	FAIL	Path Traversal
+# Remote Code Execution
+20019	FAIL	External Redirect
+# CSRF
+20012	FAIL	Anti-CSRF Tokens Check
+
+# ---- WARN on these (Medium Risk) ----
+# Missing security headers
+10038	WARN	Content Security Policy (CSP) Header Not Set
+10037	WARN	Server Leaks Information via "X-Powered-By"
+10021	WARN	X-Content-Type-Options Header Missing
+10036	WARN	Server Leaks Version Information
+10020	WARN	X-Frame-Options Header Not Set
+10017	WARN	Cross-Domain JavaScript Source File Inclusion
+10098	WARN	Cross-Domain Misconfiguration
+
+# ---- IGNORE these (False Positives / Accepted) ----
+# Nginx version header (handled at infrastructure level)
+10036	IGNORE	Server Leaks Version Information via HTTP
+# Authentication endpoint brute force info (by design)
+10023	IGNORE	Information Disclosure - Debug Error Messages
+# Dev-only info leak (not exposed in prod)
+10024	IGNORE	Information Disclosure - Sensitive Information in URL

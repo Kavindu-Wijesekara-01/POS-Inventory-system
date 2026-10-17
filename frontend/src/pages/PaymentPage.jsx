@@ -94,6 +94,7 @@ const PaymentPage = () => {
             grandTotal,
             paymentMethod,
             customer: loyaltyMember ? loyaltyMember._id : null,
+            customerName: loyaltyMember ? loyaltyMember.name : null,
             staff: staffName,
             date: new Date(),
             change: changeAmount,
